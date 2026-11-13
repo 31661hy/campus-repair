@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: campus-repair
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 数据库名必须和 SQLyog 里的一致，就是 campus_repair
+    url: jdbc:mysql://localhost:3306/campus_repair?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    # ⚠️ 最最最重要的一步：把下面这个 123456 换成你刚刚在 SQLyog 里连数据库用的那个真实密码！！！
+    password: 150313
+
+# MyBatis-Plus 基础配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
