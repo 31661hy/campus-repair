@@ -37,3 +37,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### 整个 IDEA 配置目录（避免把本机配置提交进仓库）###
+.idea/

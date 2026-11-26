@@ -101,6 +101,16 @@ public class GlobalExceptionHandler {
         return Result.fail(Result.CODE_BAD_REQUEST, e.getMessage() == null ? "请求参数非法" : e.getMessage());
     }
     /**
+     * 业务异常：由 BusinessException 主动抛出（如分类重名、状态流转非法）。
+     * 必须返回异常自带的 code，不能落到下面的兜底 500。
+     */
+    @ExceptionHandler(BusinessException.class)
+    public Result<Void> handleBusinessException(BusinessException e) {
+        log.warn("业务异常：{}", e.getMessage());
+        return Result.fail(e.getCode(), e.getMessage());
+    }
+
+    /**
      * 兜底：任何没有被上面处理的异常。
      * 这里必须记录 error 日志（含堆栈），否则线上问题无法排查。
      */
