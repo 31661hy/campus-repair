@@ -11,6 +11,8 @@ import com.campus.repair.service.CategoryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
 
@@ -56,5 +58,43 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
         this.save(category);
         return category;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Category update(Long id, Category category) {
+        if (category == null) {
+            throw new BusinessException(Result.CODE_BAD_REQUEST, "分类信息不能为空");
+        }
+
+        Category existing = this.getById(id);
+        if (existing == null) {
+            throw new BusinessException(Result.CODE_NOT_FOUND, "分类不存在：" + id);
+        }
+
+        String name = category.getName() == null ? null : category.getName().trim();
+        if (name == null || name.isEmpty()) {
+            throw new BusinessException(Result.CODE_BAD_REQUEST, "分类名称不能为空");
+        }
+        if (!name.equals(existing.getName())) {
+            long exists = this.count(new LambdaQueryWrapper<Category>()
+                    .eq(Category::getName, name)
+                    .ne(Category::getId, id));
+            if (exists > 0) {
+                throw new BusinessException(Result.CODE_BAD_REQUEST, "分类名称已存在：" + name);
+            }
+        }
+
+        existing.setName(name);
+        if (category.getSort() != null) {
+            existing.setSort(category.getSort());
+        }
+        if (category.getEnabled() != null) {
+            existing.setEnabled(category.getEnabled());
+        }
+        existing.setUpdatedAt(LocalDateTime.now());
+
+        this.updateById(existing);
+        return this.getById(id);
     }
 }

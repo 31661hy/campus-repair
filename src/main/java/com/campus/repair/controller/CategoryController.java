@@ -8,7 +8,9 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,5 +42,12 @@ public class CategoryController {
     public Result<Category> create(@Validated @RequestBody Category category) {
         Category saved = categoryService.create(category);
         return Result.ok("新增成功", saved);
+    }
+
+    /** PUT /api/categories/{id} 修改分类（存在性校验 + 名称查重） */
+    @PutMapping("/{id}")
+    public Result<Category> update(@PathVariable Long id, @Validated @RequestBody Category category) {
+        Category updated = categoryService.update(id, category);
+        return Result.ok("更新成功", updated);
     }
 }

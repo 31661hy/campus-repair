@@ -3,13 +3,17 @@ package com.campus.repair.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.repair.common.Result;
 import com.campus.repair.dto.RepairCreateDTO;
+import com.campus.repair.dto.RepairRecordCreateDTO;
+import com.campus.repair.dto.RepairStatusUpdateDTO;
 import com.campus.repair.entity.RepairOrder;
+import com.campus.repair.entity.RepairRecord;
 import com.campus.repair.service.RepairService;
 import com.campus.repair.vo.RepairDetailVO;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,5 +68,26 @@ public class RepairController {
     @GetMapping("/{id}")
     public Result<RepairDetailVO> detail(@PathVariable Long id) {
         return Result.ok("查询成功", repairService.getDetail(id));
+    }
+
+    /**
+     * PATCH /api/repairs/{id}/status
+     * 修改状态。合法流转：
+     * PENDING→PROCESSING、PROCESSING→DONE、PENDING→CANCELLED；其余拒绝。
+     */
+    @PatchMapping("/{id}/status")
+    public Result<RepairOrder> updateStatus(@PathVariable Long id,
+                                            @Validated @RequestBody RepairStatusUpdateDTO dto) {
+        return Result.ok("状态更新成功", repairService.updateStatus(id, dto.getStatus()));
+    }
+
+    /**
+     * POST /api/repairs/{id}/records
+     * 新增处理记录，并同事务把报修单状态改成新状态。
+     */
+    @PostMapping("/{id}/records")
+    public Result<RepairRecord> addRecord(@PathVariable Long id,
+                                          @Validated @RequestBody RepairRecordCreateDTO dto) {
+        return Result.ok("处理记录已保存", repairService.addRecord(id, dto));
     }
 }
