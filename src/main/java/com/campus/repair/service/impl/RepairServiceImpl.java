@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.repair.common.Result;
 import com.campus.repair.dto.RepairCreateDTO;
+import com.campus.repair.dto.RepairRecordCreateDTO;
 import com.campus.repair.entity.Category;
 import com.campus.repair.entity.RepairOrder;
 import com.campus.repair.entity.RepairRecord;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -116,6 +118,63 @@ public class RepairServiceImpl extends ServiceImpl<RepairOrderMapper, RepairOrde
                         .orderByAsc(RepairRecord::getId));
         vo.setRecords(records);
         return vo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RepairOrder updateStatus(Long id, String targetStatus) {
+        RepairOrder order = this.getById(id);
+        if (order == null) {
+            throw new BusinessException(Result.CODE_NOT_FOUND, "报修单不存在：" + id);
+        }
+        RepairStatus current = parseStatus(order.getStatus());
+        RepairStatus target = parseStatus(targetStatus);
+        validateTransition(current, target);
+
+        // 只改 status / updatedAt，避免把整行其他字段重写一遍
+        this.lambdaUpdate()
+                .eq(RepairOrder::getId, id)
+                .set(RepairOrder::getStatus, target.name())
+                .set(RepairOrder::getUpdatedAt, LocalDateTime.now())
+                .update();
+
+        return this.getById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RepairRecord addRecord(Long id, RepairRecordCreateDTO dto) {
+        RepairOrder order = this.getById(id);
+        if (order == null) {
+            throw new BusinessException(Result.CODE_NOT_FOUND, "报修单不存在：" + id);
+        }
+        RepairStatus current = parseStatus(order.getStatus());
+        RepairStatus target = parseStatus(dto.getStatus());
+        validateTransition(current, target);
+
+        // 1. 写处理记录
+        RepairRecord record = new RepairRecord();
+        record.setRepairId(id);
+        record.setHandlerName(dto.getHandlerName().trim());
+        record.setContent(dto.getContent().trim());
+        repairRecordMapper.insert(record);
+
+        // 2. 同事务更新状态：任何一步失败都会整体回滚（课程要求的事务场景）
+        this.lambdaUpdate()
+                .eq(RepairOrder::getId, id)
+                .set(RepairOrder::getStatus, target.name())
+                .set(RepairOrder::getUpdatedAt, LocalDateTime.now())
+                .update();
+
+        return repairRecordMapper.selectById(record.getId());
+    }
+
+    /** 校验状态流转是否合法，非法抛 400 */
+    private void validateTransition(RepairStatus current, RepairStatus target) {
+        if (!current.canTransitionTo(target)) {
+            throw new BusinessException(Result.CODE_BAD_REQUEST,
+                    "不允许从 " + current + " 变更为 " + target);
+        }
     }
 
     /** 把请求里的状态字符串转成枚举，非法值抛 400 */

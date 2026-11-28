@@ -3,7 +3,9 @@ package com.campus.repair.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.repair.dto.RepairCreateDTO;
+import com.campus.repair.dto.RepairRecordCreateDTO;
 import com.campus.repair.entity.RepairOrder;
+import com.campus.repair.entity.RepairRecord;
 import com.campus.repair.vo.RepairDetailVO;
 
 /**
@@ -25,4 +27,14 @@ public interface RepairService extends IService<RepairOrder> {
      * 详情：报修单字段 + 分类名称 + 处理记录列表。
      */
     RepairDetailVO getDetail(Long id);
+
+    /**
+     * 修改报修单状态：只允许合法流转，非法流转抛 BusinessException。
+     */
+    RepairOrder updateStatus(Long id, String targetStatus);
+
+    /**
+     * 新增处理记录，并同事务把报修单状态改成新状态。
+     */
+    RepairRecord addRecord(Long id, RepairRecordCreateDTO dto);
 }
